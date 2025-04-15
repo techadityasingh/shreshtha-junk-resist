@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Junk Counter for Shreshtha</title>
+  <meta name="theme-color" content="#88b04b" />
+  <style>
+    body {
+      background-color: #dce4c3;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      transition: background-color 0.5s ease;
+    }
+    .container {
+      text-align: center;
+      background-color: #fff;
+      border-radius: 20px;
+      padding: 30px 20px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+      color: #355e3b;
+      font-weight: bold;
+    }
+    .notebook {
+      background-color: #f5f5dc;
+      border: 3px dashed #a3b18a;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 10px;
+    }
+    #count {
+      font-size: 1.4em;
+      margin: 10px 0;
+    }
+    #message {
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 18px;
+      font-size: 1em;
+      margin: 6px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s;
+    }
+    #resistBtn { background-color: #88b04b; color: white; }
+    #resetBtn { background-color: #d9534f; color: white; }
+    #downloadBtn { background-color: #4e92b0; color: white; }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    .animation {
+      height: 30px;
+      margin-top: 15px;
+    }
+    .bloom {
+      animation: bloom 1s ease-out;
+      color: #ff69b4;
+      font-size: 1.5em;
+    }
+    @keyframes bloom {
+      0% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(0.8); }
+    }
+    .log {
+      background-color: #eef4d4;
+      border-radius: 10px;
+      margin-top: 20px;
+      padding: 10px;
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 0.9em;
+      color: #333;
+      text-align: left;
+    }
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px dotted #ccc;
+    }
+    select {
+      margin: 10px 0;
+      padding: 5px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      font-size: 0.95em;
+      width: 100%;
+    }
+    .badge {
+      font-size: 1.2em;
+      margin-top: 10px;
+      color: #ff9800;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 0.85em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1> 💚</h1>
+    <div class="notebook">
+      <h2>Junk Counter for Shreshtha 🍟❌</h2>
+      <p id="count">Resists: 0</p>
+      <p id="streak">🔥 Streak: 0 day(s)</p>
+      <p id="badge" class="badge"></p>
+      <p id="message">Every choice matters, Shreshtha! 💚</p>
+      <button id="resistBtn">I resisted junk! 🙅‍♀️</button>
+      <button id="resetBtn">Reset 🔄</button>
+      <button id="downloadBtn">Download Log 📄</button>
+    </div>
+    <div class="animation" id="animation"></div>
+    <div class="log" id="logContainer">
+      <strong>Log Entries:</strong><br>
+      <label for="filterDate">Filter by Date:</label>
+      <select id="filterDate">
+        <option value="all">All</option>
+      </select>
+      <div id="logList"></div>
+    </div>
+    <div class="footer">Built with 💚 by Aditya</div>
+  </div>
+
+  <script>
+    const countKey = "junkCounterCount";
+    const logKey = "junkCounterLog";
+    const streakKey = "junkCounterStreak";
+    let count = parseInt(localStorage.getItem(countKey)) || 0;
+    let log = JSON.parse(localStorage.getItem(logKey)) || [];
+    let streak = parseInt(localStorage.getItem(streakKey)) || 0;
+    let lastDate = localStorage.getItem("lastResistDate") || "";
+
+    const countDisplay = document.getElementById("count");
+    const streakDisplay = document.getElementById("streak");
+    const badgeDisplay = document.getElementById("badge");
+    const messageDisplay = document.getElementById("message");
+    const resistBtn = document.getElementById("resistBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const animation = document.getElementById("animation");
+    const logList = document.getElementById("logList");
+    const filterDate = document.getElementById("filterDate");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const emojis = ["🍓", "🥗", "💃", "💖", "🌞", "🍋", "🌸", "🌼"];
+    const badges = [
+      { threshold: 1, emoji: "🥉 Bronzee" },
+      { threshold: 2, emoji: "🥈 Silver " },
+      { threshold: 4, emoji: "🥇 Gold " },
+      { threshold: 7, emoji: "👑 Ultimate Glow Goddess" }
+    ];
+
+    const messages = [
+      "I know na you can do itttttttttt ",
+      "Cheese maggie nahi khane abb ye count karke ",
+      "Junk can't tempt this queen , kya aap queen sachme hoo?",
+      "Keep glowing inside out and stay pimple free",
+      "So proud of you 💚 should i have too be? mere bina khaa rahe !",
+      "Green plate > red plate, every single time 🥦",
+      "MAtttttt khaaa liyo abbb bohot pitege (gentle reminder):)",
+      "Ek resist = ek glow point ",
+      "The junk is shaking... Shreshtha is unbothered 😎",
+      "No to chips today = clear skin chahiye na"
+    ];
+
+    function updateUI() {
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      countDisplay.textContent = `${emoji} Resists: ${count}`;
+      messageDisplay.textContent = messages[Math.floor(Math.random() * messages.length)];
+      animation.innerHTML = `<div class="bloom">🌸</div>`;
+      setTimeout(() => animation.innerHTML = "", 1000);
+      streakDisplay.textContent = `🔥 Streak: ${streak} day(s)`;
+
+      let badgeText = "";
+      for (let b of badges.reverse()) {
+        if (streak >= b.threshold) {
+          badgeText = b.emoji;
+          break;
+        }
+      }
+      badgeDisplay.textContent = badgeText;
+
+      updateDateFilterOptions();
+      renderLog();
+      setTheme();
+    }
+
+    function getDateOnly(timestamp) {
+      return new Date(timestamp).toLocaleDateString();
+    }
+
+    function renderLog() {
+      logList.innerHTML = "";
+      const selectedDate = filterDate.value;
+      log.slice().reverse().forEach(entry => {
+        if (selectedDate === "all" || getDateOnly(entry.timestamp) === selectedDate) {
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.textContent = `✅ ${entry.message} at ${new Date(entry.timestamp).toLocaleTimeString()}`;
+          logList.appendChild(div);
+        }
+      });
+    }
+
+    function updateDateFilterOptions() {
+      const uniqueDates = [...new Set(log.map(entry => getDateOnly(entry.timestamp)))];
+      filterDate.innerHTML = `<option value="all">All</option>`;
+      uniqueDates.forEach(date => {
+        const option = document.createElement("option");
+        option.value = date;
+        option.textContent = date;
+        filterDate.appendChild(option);
+      });
+    }
+
+    function setTheme() {
+      const hour = new Date().getHours();
+      if (hour >= 6 && hour < 18) {
+        document.body.style.backgroundColor = "#fff9e3";
+      } else {
+        document.body.style.backgroundColor = "#e0d6f9";
+      }
+    }
+
+    resistBtn.addEventListener("click", () => {
+      count++;
+      localStorage.setItem(countKey, count);
+
+      const today = new Date().toLocaleDateString();
+      if (lastDate !== today) {
+        streak++;
+        lastDate = today;
+        localStorage.setItem("lastResistDate", lastDate);
+        localStorage.setItem(streakKey, streak);
+      }
+
+      const entry = {
+        message: "Resisted junk",
+        timestamp: new Date().toISOString()
+      };
+      log.push(entry);
+      localStorage.setItem(logKey, JSON.stringify(log));
+      updateUI();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to reset everything?")) {
+        count = 0;
+        streak = 0;
+        log = [];
+        localStorage.setItem(countKey, count);
+        localStorage.setItem(streakKey, streak);
+        localStorage.setItem(logKey, JSON.stringify(log));
+        updateUI();
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      const logContent = log.map(entry => `✅ ${entry.message} at ${new Date(entry.timestamp).toLocaleString()}`).join("\n\n");
+      const blob = new Blob([logContent], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "junk_counter_log.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    filterDate.addEventListener("change", () => {
+      renderLog();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>
